@@ -5,12 +5,15 @@
   "author": "ABA",
   "license": "MIT",
   "devDependencies": {
+    "@types/lodash": "^4.14.74",
     "awesome-typescript-loader": "^3.2.3",
     "typescript": "^2.5.2",
     "webpack": "^3.6.0",
     "webpack-dev-server": "^2.8.2"
   },
-  "dependencies": {},
+  "dependencies": {
+    "lodash": "^4.17.4"
+  },
   "scripts": {
     "wds": "webpack-dev-server --inline",
     "build": "webpack --env.build"
