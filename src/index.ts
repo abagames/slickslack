@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import Vector from './vector';
 import Random from './random';
+import * as ui from './ui';
 
 window.onload = init;
 
@@ -19,11 +20,75 @@ function init() {
   gridPixelSize =
     new Vector(canvasSize.x / gridSize.x, canvasSize.y / gridSize.y);
   context = canvas.getContext('2d');
+  ui.init(canvas, canvasSize);
   createStage();
+  update();
+}
+
+let pressingCrate: Vector;
+let pressingPos = new Vector();
+
+function update() {
+  requestAnimationFrame(update);
+  if (ui.isPressed) {
+    ui.resetPressed();
+    const cp = ui.cursorPos.clone();
+    cp.x /= gridPixelSize.x;
+    cp.x -= 0.5;
+    cp.y /= gridPixelSize.y;
+    cp.y -= 0.5;
+    let minDist = 2;
+    _.forEach(getCrates(), c => {
+      const d = cp.dist(c);
+      if (d < minDist) {
+        pressingPos.set(ui.cursorPos);
+        minDist = d;
+        pressingCrate = c;
+      }
+    });
+  }
+  if (pressingCrate) {
+    if (ui.isPressing) {
+      const d = ui.cursorPos.dist(pressingPos);
+      if (d > 10) {
+        const a = pressingPos.getAngle(ui.cursorPos);
+        let w = 0;
+        if (a <= -Math.PI * 0.75) {
+          w = 2;
+        } else if (a <= -Math.PI * 0.25) {
+          w = 3;
+        } else if (a <= Math.PI * 0.25) {
+        } else if (a <= Math.PI * 0.75) {
+          w = 1;
+        } else {
+          w = 2;
+        }
+        slipCrate(pressingCrate, w);
+        pressingPos.set(ui.cursorPos);
+      }
+    } else {
+      pressingCrate = null;
+    }
+  }
   drawGrid();
 }
 
 const wayVectors = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+
+function slipCrate(c: Vector, w: number) {
+  const wv = wayVectors[w];
+  grid[c.x][c.y] = 0;
+  for (; ;) {
+    c.x += wv[0];
+    c.y += wv[1];
+    if (grid[c.x][c.y] > 0) {
+      c.x -= wv[0];
+      c.y -= wv[1];
+      break;
+    }
+  }
+  grid[c.x][c.y] = 2;
+}
 
 function createStage() {
   _.times(gridSize.x, x => _.times(gridSize.y, y => {
@@ -31,32 +96,34 @@ function createStage() {
     targetGrid[x][y] = 0;
   }));
   const size = new Vector(
-    random.getInt(gridSize.x * 0.5, gridSize.x),
-    random.getInt(gridSize.y * 0.5, gridSize.y));
+    random.getInt(gridSize.x * 0.5, gridSize.x + 1),
+    random.getInt(gridSize.y * 0.5, gridSize.y + 1));
   const sPos = new Vector(
     random.getInt(gridSize.x - size.x),
     random.getInt(gridSize.y - size.y),
   );
-  _.times(size.x + 1, x => {
-    grid[sPos.x + x][sPos.y] = 1;
-    grid[sPos.x + x][sPos.y + size.y] = 1;
-    _.times(size.y - 1, y => {
-      grid[sPos.x + x][sPos.y + 1 + y] = -1;
+  _.times(size.x, x => {
+    const gx = sPos.x + x;
+    grid[gx][sPos.y] = 1;
+    grid[gx][sPos.y + size.y - 1] = 1;
+    _.times(size.y - 2, y => {
+      grid[gx][sPos.y + 1 + y] = -1;
     });
   });
-  _.times(size.y - 1, y => {
-    grid[sPos.x][sPos.y + 1 + y] = 1;
-    grid[sPos.x + size.x][sPos.y + 1 + y] = 1;
-    _.times(size.x - 1, x => {
-      grid[sPos.x + 1 + x][sPos.y + 1 + y] = -1;
+  _.times(size.y - 2, y => {
+    const gy = sPos.y + 1 + y;
+    grid[sPos.x][gy] = 1;
+    grid[sPos.x + size.x - 1][gy] = 1;
+    _.times(size.x - 2, x => {
+      grid[sPos.x + 1 + x][gy] = -1;
     });
   });
-  const cc = random.getInt(4, 8);
+  const cc = random.getInt(4, 16);
   let cx = -1;
   let cy = -1;
   _.times(cc, () => {
-    if (cx <= sPos.x || sPos.x >= sPos.x + size.x ||
-      cy <= sPos.y || sPos.y >= sPos.y + size.y) {
+    if (cx <= sPos.x || cx >= sPos.x + size.x - 1 ||
+      cy <= sPos.y || cy >= sPos.y + size.y - 1) {
       cx = random.getInt(sPos.x + 1, sPos.x + size.x - 1);
       cy = random.getInt(sPos.y + 1, sPos.y + size.y - 1);
     }
@@ -66,7 +133,7 @@ function createStage() {
     cx += wv[0];
     cy += wv[1];
   });
-  _.times(50, () => {
+  _.times(100, () => {
     reverseSlipCrate();
   });
   _.times(gridSize.x, x => _.times(gridSize.y, y => {
@@ -124,6 +191,12 @@ const gridColors = ['white', 'red', 'blue', 'yellow', 'green'];
 
 function drawGrid() {
   context.clearRect(0, 0, canvas.width, canvas.height);
+  if (pressingCrate) {
+    context.fillStyle = 'black';
+    context.fillRect(
+      pressingCrate.x * gridPixelSize.x, pressingCrate.y * gridPixelSize.y,
+      gridPixelSize.x, gridPixelSize.y);
+  }
   _.times(gridSize.x, x => _.times(gridSize.y, y => {
     let g = grid[x][y];
     const tg = targetGrid[x][y];
@@ -136,8 +209,15 @@ function drawGrid() {
     }
     if (g > 0) {
       context.fillStyle = gridColors[g];
-      context.fillRect(x * gridPixelSize.x, y * gridPixelSize.y,
+      context.fillRect(
+        x * gridPixelSize.x, y * gridPixelSize.y,
         gridPixelSize.x, gridPixelSize.y);
     }
   }));
+  if (pressingCrate != null) {
+    context.fillStyle = 'black';
+    context.fillRect(
+      pressingCrate.x * gridPixelSize.x, pressingCrate.y * gridPixelSize.y,
+      gridPixelSize.x, gridPixelSize.y);
+  }
 }
