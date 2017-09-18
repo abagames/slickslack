@@ -20,7 +20,7 @@ export default class Random {
     return this.get(2) * 2 - 1;
   }
 
-  select(values: any[]) {
+  select<T>(values: T[]): T {
     return values[this.getInt(values.length)];
   }
 
