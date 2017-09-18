@@ -133,13 +133,24 @@ function createStage() {
     cx += wv[0];
     cy += wv[1];
   });
-  _.times(100, () => {
+  _.times(50, () => {
     reverseSlipCrate();
+  });
+  _.times(50, () => {
+    const gx = random.getInt(sPos.x + 1, sPos.x + size.x - 1);
+    const gy = random.getInt(sPos.y + 1, sPos.y + size.y - 1);
+    let g = grid[gx][gy];
+    if (g >= 0) {
+      return;
+    }
+    if (_.some(wayVectors, wv => grid[gx + wv[0]][gy + wv[1]] > 0)) {
+      grid[gx][gy] = 1;
+    }
   });
   _.times(gridSize.x, x => _.times(gridSize.y, y => {
     let g = grid[x][y];
     if (g < 0) {
-      g = 1;
+      g = 0;
     }
     grid[x][y] = g;
   }));
@@ -147,7 +158,13 @@ function createStage() {
 
 function reverseSlipCrate() {
   let ocp = random.select(getCrates());
-  const wv = random.select(wayVectors);
+  const wvs = [];
+  _.forEach(wayVectors, wv => {
+    if (grid[ocp.x - wv[0]][ocp.y - wv[1]] === 2) {
+      wvs.push(wv);
+    }
+  });
+  const wv = wvs.length > 0 ? random.select(wvs) : random.select(wayVectors);
   if (grid[ocp.x - wv[0]][ocp.y - wv[1]] === 0) {
     return;
   }
