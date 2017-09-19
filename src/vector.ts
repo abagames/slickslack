@@ -41,4 +41,10 @@ export default class Vector {
     const oy = v.y - this.y;
     return Math.atan2(oy, ox);
   }
+
+  swapXy() {
+    const t = this.x;
+    this.x = this.y;
+    this.y = t;
+  }
 }
