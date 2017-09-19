@@ -123,8 +123,13 @@ function slipCrate(c: Vector, w: number) {
   grid[c.x][c.y] = 2;
 }
 
-function createStage() {
-  initGrid();
+function createStage(stage = 100) {
+  const difficulty = Math.sqrt(1 + stage * 0.1) - 1;
+  let gs = Math.floor(5 + random.get(difficulty) * 10);
+  if (gs > 16) {
+    gs = 16;
+  }
+  initGrid(gs);
   const size = new Vector(
     gridSize,
     random.getInt(gridSize * 0.5, gridSize + 1));
@@ -132,38 +137,44 @@ function createStage() {
     size.swapXy();
   }
   setAroundWalls(size);
-  const cc = random.getInt(4, 16);
+  let cc = Math.floor(1 + random.get(difficulty) * 10);
+  if (cc > 20) {
+    cc = 20;
+  }
   setCrates(size, cc);
-  _.times(50, () => {
+  let sc = Math.floor(1 + random.get(difficulty) * 20);
+  if (sc > 10) {
+    sc = 10;
+  }
+  _.times(cc * sc, () => {
     reverseSlipCrate();
   });
-  _.times(50, () => {
+  _.times(Math.floor(size.x * size.y * random.get(0, 0.5)), () => {
     addWall(size);
   });
 }
 
-function initGrid() {
-  gridSize = random.getInt(8, 16);
+function initGrid(size: number) {
+  gridSize = size;
   gridPixelSize = canvasSize.x / gridSize;
   grid = _.times(gridSize, () => _.times(gridSize, () => -2));
   targetGrid = _.times(gridSize, () => _.times(gridSize, () => -2));
 }
 
 function setAroundWalls(size: Vector) {
-  _.times(size.x, x => {
-    const gx = x;
-    grid[gx][0] = 1;
-    grid[gx][size.y - 1] = 1;
+  _.times(size.x, wx => {
+    grid[wx][0] = 1;
+    grid[wx][size.y - 1] = 1;
     _.times(size.y - 2, y => {
-      grid[gx][1 + y] = -1;
+      grid[wx][y + 1] = -1;
     });
   });
   _.times(size.y - 2, y => {
-    const gy = 1 + y;
-    grid[0][gy] = 1;
-    grid[size.x - 1][gy] = 1;
+    const wy = y + 1;
+    grid[0][wy] = 1;
+    grid[size.x - 1][wy] = 1;
     _.times(size.x - 2, x => {
-      grid[1 + x][gy] = -1;
+      grid[x + 1][wy] = -1;
     });
   });
 }
