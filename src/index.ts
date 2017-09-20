@@ -149,33 +149,48 @@ function createStage(stage = 100) {
   _.times(cc * sc, () => {
     reverseSlipCrate();
   });
+  removeEmptyRowsAndColumns(size);
   _.times(Math.floor(size.x * size.y * random.get(0, 0.5)), () => {
     addWall(size);
   });
 }
 
 function initGrid(size: number) {
-  gridSize = size;
-  gridPixelSize = canvasSize.x / gridSize;
+  setGridSize(size);
   grid = _.times(gridSize, () => _.times(gridSize, () => -2));
   targetGrid = _.times(gridSize, () => _.times(gridSize, () => -2));
 }
 
-function setAroundWalls(size: Vector) {
+function setGridSize(size: number) {
+  gridSize = size;
+  gridPixelSize = canvasSize.x / gridSize;
+}
+
+function setAroundWalls(size: Vector, isFillingCenter = true) {
   _.times(size.x, wx => {
     grid[wx][0] = 1;
     grid[wx][size.y - 1] = 1;
-    _.times(size.y - 2, y => {
-      grid[wx][y + 1] = -1;
-    });
+    if (isFillingCenter) {
+      _.times(size.y - 2, y => {
+        grid[wx][y + 1] = -1;
+      });
+    } else {
+      targetGrid[wx][0] = -2;
+      targetGrid[wx][size.y - 1] = -2;
+    }
   });
   _.times(size.y - 2, y => {
     const wy = y + 1;
     grid[0][wy] = 1;
     grid[size.x - 1][wy] = 1;
-    _.times(size.x - 2, x => {
-      grid[x + 1][wy] = -1;
-    });
+    if (isFillingCenter) {
+      _.times(size.x - 2, x => {
+        grid[x + 1][wy] = -1;
+      });
+    } else {
+      targetGrid[0][wy] = -2;
+      targetGrid[size.x - 1][wy] = -2;
+    }
   });
 }
 
@@ -244,6 +259,63 @@ function reverseSlipCrate() {
 
 function existsAroundCrates(p: Vector) {
   return _.some(wayVectors, wv => grid[p.x + wv[0]][p.y + wv[1]] === 2);
+}
+
+function removeEmptyRowsAndColumns(size: Vector) {
+  let sx = null, ex = null;
+  _.times(size.x, x => {
+    if (sx == null && !checkEmptyColumn(size, x)) {
+      sx = x;
+    }
+    if (ex == null && !checkEmptyColumn(size, size.x - 1 - x)) {
+      ex = size.x - 1 - x;
+    }
+  });
+  let sy = null, ey = null;
+  _.times(size.y, y => {
+    if (sy == null && !checkEmptyRow(size, y)) {
+      sy = y;
+    }
+    if (ey == null && !checkEmptyRow(size, size.y - 1 - y)) {
+      ey = size.y - 1 - y;
+    }
+  });
+  size.x = ex - sx + 1;
+  size.y = ey - sy + 1;
+  _.times(size.x, x => _.times(size.y, y => {
+    grid[x + 1][y + 1] = grid[x + sx][y + sy];
+    targetGrid[x + 1][y + 1] = targetGrid[x + sx][y + sy];
+  }));
+  size.x += 2;
+  size.y += 2;
+  setAroundWalls(size, false);
+  setGridSize(Math.max(size.x, size.y));
+}
+
+function checkEmptyColumn(size: Vector, x: number) {
+  let result = true;
+  _.times(size.y, y => {
+    const g = grid[x][y];
+    const tg = targetGrid[x][y];
+    if ((g !== -1 && g !== 1) || tg === 3) {
+      result = false;
+      return false;
+    }
+  });
+  return result;
+}
+
+function checkEmptyRow(size: Vector, y: number) {
+  let result = true;
+  _.times(size.x, x => {
+    const g = grid[x][y];
+    const tg = targetGrid[x][y];
+    if ((g !== -1 && g !== 1) || tg === 3) {
+      result = false;
+      return false;
+    }
+  });
+  return result;
 }
 
 function addWall(size: Vector) {
