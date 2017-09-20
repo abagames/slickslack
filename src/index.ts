@@ -210,6 +210,7 @@ function reverseSlipCrate() {
   }
   let cp = ocp.clone();
   let lc = 0;
+  const lcs: number[] = [];
   for (; ;) {
     cp.x += wv[0];
     cp.y += wv[1];
@@ -217,6 +218,9 @@ function reverseSlipCrate() {
       break;
     }
     lc++;
+    if (existsAroundCrates(cp)) {
+      lcs.push(lc);
+    }
   }
   if (lc <= 0) {
     return;
@@ -224,7 +228,11 @@ function reverseSlipCrate() {
   if (grid[ocp.x - wv[0]][ocp.y - wv[1]] < 0) {
     grid[ocp.x - wv[0]][ocp.y - wv[1]] = 1;
   }
-  lc = random.getInt(1, lc + 1);
+  if (lcs.length > 0) {
+    lc = random.select(lcs);
+  } else {
+    lc = random.getInt(1, lc + 1);
+  }
   cp = ocp.clone();
   _.times(lc, () => {
     grid[cp.x][cp.y] = 0;
@@ -232,6 +240,10 @@ function reverseSlipCrate() {
     cp.y += wv[1];
   });
   grid[cp.x][cp.y] = 2;
+}
+
+function existsAroundCrates(p: Vector) {
+  return _.some(wayVectors, wv => grid[p.x + wv[0]][p.y + wv[1]] === 2);
 }
 
 function addWall(size: Vector) {
