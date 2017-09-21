@@ -153,6 +153,7 @@ function createStage(stage = 100) {
   _.times(Math.floor(size.x * size.y * random.get(0, 0.5)), () => {
     addWall(size);
   });
+  slideStage(size);
 }
 
 function initGrid(size: number) {
@@ -328,6 +329,46 @@ function addWall(size: Vector) {
   if (_.some(wayVectors, wv => grid[gx + wv[0]][gy + wv[1]] > 0)) {
     grid[gx][gy] = 1;
   }
+}
+
+function slideStage(size: Vector) {
+  if (size.x < gridSize) {
+    const sx = Math.floor((gridSize - size.x) / 2);
+    const ex = sx + size.x - 1;
+    slideStageX(sx, ex);
+  } else {
+    const sy = Math.floor((gridSize - size.y) / 2);
+    const ey = sy + size.y - 1;
+    slideStageY(sy, ey);
+  }
+}
+
+function slideStageX(sx: number, ex: number) {
+  _.times(gridSize, rx => {
+    const x = gridSize - rx - 1;
+    _.times(gridSize, y => {
+      if (x > ex || x < sx) {
+        grid[x][y] = targetGrid[x][y] = -2;
+      } else {
+        grid[x][y] = grid[x - sx][y];
+        targetGrid[x][y] = targetGrid[x - sx][y];
+      }
+    });
+  });
+}
+
+function slideStageY(sy: number, ey: number) {
+  _.times(gridSize, ry => {
+    const y = gridSize - ry - 1;
+    _.times(gridSize, x => {
+      if (y > ey || y < sy) {
+        grid[x][y] = targetGrid[x][y] = -2;
+      } else {
+        grid[x][y] = grid[x][y - sy];
+        targetGrid[x][y] = targetGrid[x][y - sy];
+      }
+    });
+  });
 }
 
 function getCrates() {
