@@ -105,8 +105,16 @@ function drawGrid() {
   }));
   if (pressingCrate != null) {
     context.fillStyle = 'black';
-    context.fillRect(
+    drawRect(
       pressingCrate.x * gridPixelSize, pressingCrate.y * gridPixelSize,
-      gridPixelSize, gridPixelSize);
+      gridPixelSize, gridPixelSize, gridPixelSize * 0.2);
   }
+}
+
+function drawRect
+  (x: number, y: number, width: number, height: number, thickness: number) {
+  context.fillRect(x, y, width, thickness);
+  context.fillRect(x, y + height - thickness, width, thickness);
+  context.fillRect(x, y, thickness, height);
+  context.fillRect(x + width - thickness, y, thickness, height);
 }
