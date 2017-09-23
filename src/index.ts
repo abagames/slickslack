@@ -1,8 +1,9 @@
 import * as _ from 'lodash';
 import Vector from './vector';
 import Random from './random';
-import * as ui from './ui';
 import * as generator from './generator';
+import * as text from './text';
+import * as ui from './ui';
 
 window.onload = init;
 
@@ -13,6 +14,7 @@ let gridSize: number;
 let gridPixelSize: number;
 let grid: number[][];
 let targetGrid: number[][];
+let stage: number;
 const random = new Random();
 
 function init() {
@@ -20,7 +22,9 @@ function init() {
   canvasSize = new Vector(canvas.width, canvas.height);
   context = canvas.getContext('2d');
   ui.init(canvas, canvasSize);
-  generator.createStage(30);
+  text.init(context);
+  stage = 3;
+  generator.createStage(stage);
   gridSize = generator.gridSize;
   gridPixelSize = canvasSize.x / gridSize;
   grid = generator.grid;
@@ -128,6 +132,7 @@ function drawGrid() {
       pressingCrate.x * gridPixelSize, pressingCrate.y * gridPixelSize,
       gridPixelSize, gridPixelSize, gridPixelSize * 0.2);
   }
+  text.draw(`STAGE ${stage}/30`, 1, 1, text.Align.left);
 }
 
 function drawRect
