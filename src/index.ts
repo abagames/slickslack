@@ -15,6 +15,9 @@ let gridPixelSize: number;
 let grid: number[][];
 let targetGrid: number[][];
 let stage: number;
+let stageCompletedTicks = 0;
+let completingWay: number;
+let stageOffset = new Vector();
 const random = new Random();
 
 function init() {
@@ -23,7 +26,7 @@ function init() {
   context = canvas.getContext('2d');
   ui.init(canvas, canvasSize);
   text.init(context);
-  stage = 3;
+  stage = 1;
   createStage();
   update();
 }
@@ -34,6 +37,8 @@ function createStage() {
   gridPixelSize = canvasSize.x / gridSize;
   grid = generator.grid;
   targetGrid = generator.targetGrid;
+  stageCompletedTicks = 0;
+  stageOffset.set(0, 0);
 }
 
 let pressingCrate: Vector;
@@ -43,6 +48,21 @@ let isButtonPressing = false;
 
 function update() {
   requestAnimationFrame(update);
+  if (stageCompletedTicks <= 0) {
+    updateUi();
+    drawGrid();
+    drawResetButton();
+  } else {
+    updateAfterCompleted();
+    drawGrid(stageOffset.x, stageOffset.y);
+    if (stageCompletedTicks > 30) {
+      stage++;
+      createStage();
+    }
+  }
+}
+
+function updateUi() {
   if (ui.isPressed) {
     ui.resetPressed();
     const cp = ui.cursorPos.clone();
@@ -82,6 +102,11 @@ function update() {
         }
         slipCrate(pressingCrate, w);
         pressingPos.set(ui.cursorPos);
+        if (checkStageCompleted()) {
+          stageCompletedTicks = 1;
+          completingWay = w;
+          pressingCrate = null;
+        }
       }
     } else {
       pressingCrate = null;
@@ -96,7 +121,6 @@ function update() {
       isButtonPressing = false;
     }
   }
-  drawGrid();
 }
 
 const afterimageMoveTicks = 10;
@@ -120,15 +144,27 @@ function slipCrate(c: Vector, w: number) {
   });
 }
 
+function checkStageCompleted() {
+  return _.every(generator.getCrates(), cp => targetGrid[cp.x][cp.y] === 3);
+}
+
+function updateAfterCompleted() {
+  const wc = generator.wayVectors[completingWay];
+  const sp = stageCompletedTicks * stageCompletedTicks * 0.1;
+  stageOffset.x += wc[0] * sp;
+  stageOffset.y += wc[1] * sp;
+  stageCompletedTicks++;
+}
+
 const gridColors = ['white', 'red', 'blue', 'yellow', 'green'];
 
-function drawGrid() {
+function drawGrid(ox: number = 0, oy: number = 0) {
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = gridColors[3];
   _.times(gridSize, x => _.times(gridSize, y => {
     if (targetGrid[x][y] === 3) {
       context.fillRect(
-        x * gridPixelSize, y * gridPixelSize,
+        x * gridPixelSize + ox, y * gridPixelSize + oy,
         gridPixelSize, gridPixelSize);
     }
   }));
@@ -141,7 +177,7 @@ function drawGrid() {
     if (g > 0) {
       context.fillStyle = gridColors[g];
       context.fillRect(
-        x * gridPixelSize, y * gridPixelSize,
+        x * gridPixelSize + ox, y * gridPixelSize + oy,
         gridPixelSize, gridPixelSize);
     }
   }));
@@ -152,6 +188,9 @@ function drawGrid() {
       gridPixelSize, gridPixelSize, gridPixelSize * 0.2);
   }
   text.draw(`STAGE ${stage}/30`, 1, 1, text.Align.left);
+}
+
+function drawResetButton() {
   context.fillStyle = isButtonPressing ? 'green' : 'blue';
   context.fillRect
     (canvasSize.x - buttonSize.x, canvasSize.y - buttonSize.y,

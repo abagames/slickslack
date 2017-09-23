@@ -5,7 +5,7 @@ import Random from './random';
 export let gridSize: number;
 export let grid: number[][];
 export let targetGrid: number[][];
-const wayVectors = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+export const wayVectors = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 const random = new Random();
 
 export function createStage(stage) {
