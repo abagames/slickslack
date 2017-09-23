@@ -109,7 +109,10 @@ function drawGrid() {
 const wayVectors = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 
 function slipCrate(c: Vector, w: number) {
-  const wv = wayVectors[w];
+  slipCrateByVector(c, wayVectors[w]);
+}
+
+function slipCrateByVector(c: Vector, wv: number[]) {
   grid[c.x][c.y] = 0;
   for (; ;) {
     c.x += wv[0];
@@ -123,9 +126,24 @@ function slipCrate(c: Vector, w: number) {
   grid[c.x][c.y] = 2;
 }
 
-function createStage(stage = 0) {
+function createStage(stage = 3) {
+  random.setSeed((stage + 1) * 7);
+  let isCreated = false;
+  for (let i = 0; i < 10; i++) {
+    isCreated = tryToCreateStage(stage);
+    if (isCreated) {
+      break;
+    }
+  }
+  if (!isCreated) {
+    random.setSeed(0);
+    tryToCreateStage(30);
+  }
+}
+
+function tryToCreateStage(stage) {
   const difficulty = Math.sqrt(1 + stage * 0.5) - 1 + 0.01;
-  let gs = Math.floor(7 + getDifficultyRandom(difficulty) * 2);
+  let gs = Math.floor(7 + random.get(difficulty) + difficulty);
   if (gs > 32) {
     gs = 32;
   }
@@ -137,13 +155,13 @@ function createStage(stage = 0) {
     size.swapXy();
   }
   setAroundWalls(size);
-  let ccr = getDifficultyRandom(difficulty) * 0.16;
-  if (ccr > 0.5) {
-    ccr = 0.5;
+  let ccr = random.get(difficulty) * 0.1;
+  if (ccr > 0.33) {
+    ccr = 0.33;
   }
   const cc = Math.floor(gs * gs * ccr) + 1;
   setCrates(size, cc);
-  _.times(cc * 100, () => {
+  _.times(cc * 3, () => {
     reverseSlipCrate();
   });
   removeEmptyRowsAndColumns(size);
@@ -151,10 +169,10 @@ function createStage(stage = 0) {
     addWall(size);
   });
   slideStage(size);
-}
-
-function getDifficultyRandom(difficulty: number) {
-  return random.get(difficulty) * 0.5 + difficulty * 0.5;
+  _.times(5, () => {
+    slipCratesOnTarget();
+  });
+  return checkIsValidStage();
 }
 
 function initGrid(size: number) {
@@ -370,6 +388,27 @@ function slideStageY(sy: number, ey: number) {
       }
     });
   });
+}
+
+function slipCratesOnTarget() {
+  _.forEach(getCrates(), cp => {
+    if (targetGrid[cp.x][cp.y] !== 3) {
+      return;
+    }
+    const wvs = [];
+    _.forEach(wayVectors, wv => {
+      if (grid[cp.x - wv[0]][cp.y - wv[1]] > 0) {
+        wvs.push(wv);
+      }
+    });
+    if (wvs.length > 0) {
+      slipCrateByVector(cp, random.select(wvs));
+    }
+  });
+}
+
+function checkIsValidStage() {
+  return _.some(getCrates(), cp => targetGrid[cp.x][cp.y] !== 3)
 }
 
 function getCrates() {
