@@ -60,8 +60,9 @@ export enum Align {
   left, right
 }
 
-export function draw(str: string, x: number, y: number, align: Align = null) {
-  context.fillStyle = 'black';
+export function draw
+  (str: string, x: number, y: number, align: Align = null, color = 'black') {
+  context.fillStyle = color;
   if (align === Align.left) {
   } else if (align === Align.right) {
     x -= str.length * 5;

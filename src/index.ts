@@ -24,16 +24,22 @@ function init() {
   ui.init(canvas, canvasSize);
   text.init(context);
   stage = 3;
+  createStage();
+  update();
+}
+
+function createStage() {
   generator.createStage(stage);
   gridSize = generator.gridSize;
   gridPixelSize = canvasSize.x / gridSize;
   grid = generator.grid;
   targetGrid = generator.targetGrid;
-  update();
 }
 
 let pressingCrate: Vector;
 let pressingPos = new Vector();
+const buttonSize = new Vector(40, 15);
+let isButtonPressing = false;
 
 function update() {
   requestAnimationFrame(update);
@@ -53,6 +59,10 @@ function update() {
         pressingCrate = c;
       }
     });
+    if (ui.cursorPos.x > canvasSize.x - buttonSize.x - 20 &&
+      ui.cursorPos.y > canvasSize.y - buttonSize.y - 10) {
+      isButtonPressing = true;
+    }
   }
   if (pressingCrate) {
     if (ui.isPressing) {
@@ -75,6 +85,15 @@ function update() {
       }
     } else {
       pressingCrate = null;
+    }
+  }
+  if (isButtonPressing) {
+    if (ui.cursorPos.x < canvasSize.x - buttonSize.x - 20 ||
+      ui.cursorPos.y < canvasSize.y - buttonSize.y - 10) {
+      isButtonPressing = false;
+    } else if (!ui.isPressing) {
+      createStage();
+      isButtonPressing = false;
     }
   }
   drawGrid();
@@ -133,6 +152,13 @@ function drawGrid() {
       gridPixelSize, gridPixelSize, gridPixelSize * 0.2);
   }
   text.draw(`STAGE ${stage}/30`, 1, 1, text.Align.left);
+  context.fillStyle = isButtonPressing ? 'green' : 'blue';
+  context.fillRect
+    (canvasSize.x - buttonSize.x, canvasSize.y - buttonSize.y,
+    buttonSize.x, buttonSize.y);
+  text.draw('RESET',
+    canvasSize.x - buttonSize.x / 2, canvasSize.y - buttonSize.y * 0.6,
+    null, 'white');
 }
 
 function drawRect
