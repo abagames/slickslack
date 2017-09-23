@@ -5,8 +5,8 @@ import Random from './random';
 export let gridSize: number;
 export let grid: number[][];
 export let targetGrid: number[][];
-const random = new Random();
 const wayVectors = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+const random = new Random();
 
 export function createStage(stage) {
   random.setSeed((stage + 1) * 7);
@@ -285,11 +285,12 @@ function slipCratesOnTarget() {
 }
 
 export function slipCrate(c: Vector, w: number) {
-  slipCrateByVector(c, wayVectors[w]);
+  return slipCrateByVector(c, wayVectors[w]);
 }
 
 function slipCrateByVector(c: Vector, wv: number[]) {
   grid[c.x][c.y] = 0;
+  let count = 0;
   for (; ;) {
     c.x += wv[0];
     c.y += wv[1];
@@ -298,8 +299,10 @@ function slipCrateByVector(c: Vector, wv: number[]) {
       c.y -= wv[1];
       break;
     }
+    count++;
   }
   grid[c.x][c.y] = 2;
+  return { pos: new Vector(c.x, c.y), count, wayVector: wv };
 }
 
 function checkIsValidStage() {

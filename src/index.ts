@@ -66,7 +66,7 @@ function update() {
         } else {
           w = 2;
         }
-        generator.slipCrate(pressingCrate, w);
+        slipCrate(pressingCrate, w);
         pressingPos.set(ui.cursorPos);
       }
     } else {
@@ -76,25 +76,44 @@ function update() {
   drawGrid();
 }
 
+const afterimageMoveTicks = 10;
+
+function slipCrate(c: Vector, w: number) {
+  const mv = generator.slipCrate(pressingCrate, w);
+  const pos = mv.pos;
+  let thickness = gridPixelSize * 0.15;
+  _.times(mv.count, i => {
+    pos.x -= mv.wayVector[0];
+    pos.y -= mv.wayVector[1];
+    const sp = (i + 1) * gridPixelSize / afterimageMoveTicks;
+    addAfterimage(
+      new Vector(pos.x * gridPixelSize, pos.y * gridPixelSize),
+      new Vector(mv.wayVector[0] * sp, mv.wayVector[1] * sp),
+      thickness);
+    thickness *= 0.8;
+    if (thickness < 1) {
+      thickness = 1;
+    }
+  });
+}
+
 const gridColors = ['white', 'red', 'blue', 'yellow', 'green'];
 
 function drawGrid() {
   context.clearRect(0, 0, canvas.width, canvas.height);
-  if (pressingCrate) {
-    context.fillStyle = 'black';
-    context.fillRect(
-      pressingCrate.x * gridPixelSize, pressingCrate.y * gridPixelSize,
-      gridPixelSize, gridPixelSize);
-  }
+  context.fillStyle = gridColors[3];
+  _.times(gridSize, x => _.times(gridSize, y => {
+    if (targetGrid[x][y] === 3) {
+      context.fillRect(
+        x * gridPixelSize, y * gridPixelSize,
+        gridPixelSize, gridPixelSize);
+    }
+  }));
+  updateAfterimages();
   _.times(gridSize, x => _.times(gridSize, y => {
     let g = grid[x][y];
-    const tg = targetGrid[x][y];
-    if (tg === 3) {
-      if (g === 2) {
-        g = 4;
-      } else {
-        g = 3;
-      }
+    if (targetGrid[x][y] === 3 && g === 2) {
+      g = 4;
     }
     if (g > 0) {
       context.fillStyle = gridColors[g];
@@ -117,4 +136,25 @@ function drawRect
   context.fillRect(x, y + height - thickness, width, thickness);
   context.fillRect(x, y, thickness, height);
   context.fillRect(x + width - thickness, y, thickness, height);
+}
+
+const afterimages = [];
+
+function addAfterimage(p: Vector, v: Vector, thickness: number) {
+  afterimages.push({ p, v, thickness, ticks: afterimageMoveTicks });
+}
+
+function updateAfterimages() {
+  context.fillStyle = '#88f';
+  for (let i = 0; i < afterimages.length;) {
+    const a = afterimages[i];
+    drawRect(a.p.x, a.p.y, gridPixelSize, gridPixelSize, a.thickness);
+    a.p.add(a.v);
+    a.ticks--;
+    if (a.ticks <= 0) {
+      afterimages.splice(i, 1);
+    } else {
+      i++;
+    }
+  }
 }
