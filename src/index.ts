@@ -123,11 +123,11 @@ function slipCrate(c: Vector, w: number) {
   grid[c.x][c.y] = 2;
 }
 
-function createStage(stage = 100) {
-  const difficulty = Math.sqrt(1 + stage * 0.1) - 1;
-  let gs = Math.floor(5 + random.get(difficulty) * 10);
-  if (gs > 16) {
-    gs = 16;
+function createStage(stage = 0) {
+  const difficulty = Math.sqrt(1 + stage * 0.5) - 1 + 0.01;
+  let gs = Math.floor(7 + getDifficultyRandom(difficulty) * 2);
+  if (gs > 32) {
+    gs = 32;
   }
   initGrid(gs);
   const size = new Vector(
@@ -137,16 +137,13 @@ function createStage(stage = 100) {
     size.swapXy();
   }
   setAroundWalls(size);
-  let cc = Math.floor(1 + random.get(difficulty) * 10);
-  if (cc > 20) {
-    cc = 20;
+  let ccr = getDifficultyRandom(difficulty) * 0.16;
+  if (ccr > 0.5) {
+    ccr = 0.5;
   }
+  const cc = Math.floor(gs * gs * ccr) + 1;
   setCrates(size, cc);
-  let sc = Math.floor(1 + random.get(difficulty) * 20);
-  if (sc > 10) {
-    sc = 10;
-  }
-  _.times(cc * sc, () => {
+  _.times(cc * 100, () => {
     reverseSlipCrate();
   });
   removeEmptyRowsAndColumns(size);
@@ -154,6 +151,10 @@ function createStage(stage = 100) {
     addWall(size);
   });
   slideStage(size);
+}
+
+function getDifficultyRandom(difficulty: number) {
+  return random.get(difficulty) * 0.5 + difficulty * 0.5;
 }
 
 function initGrid(size: number) {
