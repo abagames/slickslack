@@ -9,24 +9,20 @@ let pixelSize: Vector;
 let currentTargetPos: Vector;
 let prevCursorPos: Vector;
 let targetPos: Vector;
-let ontouchstartFirst: Function;
+let onDownFirst: Function;
 
 export function init(
   _canvas: HTMLCanvasElement, _pixelSize: Vector,
-  _ontouchstartFirst: Function = null) {
+  _onDownFirst: Function = null) {
   canvas = _canvas;
   pixelSize = _pixelSize;
-  ontouchstartFirst = _ontouchstartFirst;
+  onDownFirst = _onDownFirst;
   document.onmousedown = (e) => {
-    onMouseTouchDown(e.pageX, e.pageY);
+    handleOnDown(e.pageX, e.pageY);
   };
   document.ontouchstart = (e) => {
     e.preventDefault();
-    if (ontouchstartFirst != null) {
-      ontouchstartFirst();
-      ontouchstartFirst = null;
-    }
-    onMouseTouchDown(e.touches[0].pageX, e.touches[0].pageY);
+    handleOnDown(e.touches[0].pageX, e.touches[0].pageY);
   };
   document.onmousemove = (e) => {
     onMouseTouchMove(e.pageX, e.pageY);
@@ -45,6 +41,14 @@ export function init(
   targetPos = new Vector();
   currentTargetPos = new Vector();
   prevCursorPos = new Vector();
+}
+
+function handleOnDown(x: number, y: number) {
+  if (onDownFirst != null) {
+    onDownFirst();
+    onDownFirst = null;
+  }
+  onMouseTouchDown(x, y);
 }
 
 export function setCurrentTargetPos(_currentTargetPos: Vector) {
