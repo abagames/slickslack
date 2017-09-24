@@ -314,7 +314,7 @@ function drawResetButton() {
 }
 
 function drawInstruction() {
-  text.draw('DRAG OR SWIPE THE BLUE SQUARE',
+  text.draw('DRAG OR FLICK THE BLUE SQUARE',
     canvasSize.x / 2, canvasSize.y * 0.2);
 }
 
