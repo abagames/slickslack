@@ -70,19 +70,26 @@ function intToFreq(v: number) {
   return Math.pow(2, (v / 12)) * 349.23;
 }
 
-const stageKey = 'slick_slack_stage';
+let nextStage = 1;
 
 function startGame() {
   isTitle = false;
-  const stageStr = localStorage.getItem(stageKey);
-  if (stageStr == null) {
-    stage = 1;
-  } else {
-    stage = Math.floor(Number(stageStr));
+  let storageStage = loadFromStorage();
+  if (storageStage == null) {
+    storageStage = 1;
   }
-  if (stage <= 0) {
-    stage = 1;
-  }
+  const urlStage = loadFromUrl();
+  stage = urlStage != null ? urlStage : storageStage;
+  nextStage = stage === storageStage ? storageStage + 1 : storageStage;
+  saveAsUrl();
+  createStage();
+}
+
+function goToNextStage() {
+  stage = nextStage;
+  nextStage++;
+  saveToStorage();
+  saveAsUrl();
   createStage();
 }
 
@@ -258,12 +265,6 @@ function updateAfterCompleted() {
   }
 }
 
-function goToNextStage() {
-  stage++;
-  localStorage.setItem(stageKey, String(stage));
-  createStage();
-}
-
 const gridColors = ['white', 'red', 'blue', 'yellow', 'green'];
 
 function drawGrid(ox: number = 0, oy: number = 0) {
@@ -344,4 +345,59 @@ function updateAfterimages() {
       i++;
     }
   }
+}
+
+const stageKey = 'slick_slack_stage';
+
+function saveToStorage() {
+  try {
+    localStorage.setItem(stageKey, String(stage));
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+function loadFromStorage() {
+  let stageStr;
+  try {
+    stageStr = localStorage.getItem(stageKey);
+  } catch (e) {
+    console.log(e);
+  }
+  if (stageStr == null) {
+    return null;
+  } else {
+    const st = Math.floor(Number(stageStr));
+    return st > 0 ? st : null;
+  }
+}
+
+function saveAsUrl() {
+  const baseUrl = window.location.href.split('?')[0];
+  let url = `${baseUrl}?s=${stage}`;
+  try {
+    window.history.replaceState({}, '', url);
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+function loadFromUrl() {
+  const query = window.location.search.substring(1);
+  if (query == null) {
+    return null;
+  }
+  let params = query.split('&');
+  let stageStr: string;
+  for (let i = 0; i < params.length; i++) {
+    const param = params[i];
+    const pair = param.split('=');
+    if (pair[0] === 's') {
+      stageStr = pair[1];
+    }
+  }
+  if (stageStr == null) {
+    return null;
+  }
+  return Math.floor(Number(stageStr));
 }
