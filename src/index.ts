@@ -114,13 +114,11 @@ function update() {
     updateUi();
     drawGrid();
     drawResetButton();
+    if (stage === 1) {
+      drawInstruction();
+    }
   } else {
     updateAfterCompleted();
-    drawGrid(stageOffset.x, stageOffset.y);
-    if (stageCompletedTicks > 30) {
-      stage++;
-      createStage();
-    }
   }
 }
 
@@ -238,6 +236,18 @@ function updateAfterCompleted() {
   stageOffset.x += wc[0] * sp;
   stageOffset.y += wc[1] * sp;
   stageCompletedTicks++;
+  drawGrid(stageOffset.x, stageOffset.y);
+  if (stage === 30) {
+    text.draw("CONGRATULATIONS!", canvasSize.x / 2, canvasSize.y * 0.3);
+    text.draw("30 STAGES ARE SOLVED", canvasSize.x / 2, canvasSize.y * 0.7);
+    if (stageCompletedTicks > 180) {
+      stage++;
+      createStage();
+    }
+  } else if (stageCompletedTicks > 30) {
+    stage++;
+    createStage();
+  }
 }
 
 const gridColors = ['white', 'red', 'blue', 'yellow', 'green'];
@@ -271,7 +281,11 @@ function drawGrid(ox: number = 0, oy: number = 0) {
       pressingCrate.x * gridPixelSize, pressingCrate.y * gridPixelSize,
       gridPixelSize, gridPixelSize, gridPixelSize * 0.2);
   }
-  text.draw(`STAGE ${stage}/30`, 1, 1, text.Align.left);
+  let sm = `STAGE ${stage}`;
+  if (stage <= 30) {
+    sm += '/30';
+  }
+  text.draw(sm, 1, 1, text.Align.left);
 }
 
 function drawResetButton() {
@@ -282,6 +296,11 @@ function drawResetButton() {
   text.draw('RESET',
     canvasSize.x - buttonSize.x / 2, canvasSize.y - buttonSize.y * 0.6,
     null, 'white');
+}
+
+function drawInstruction() {
+  text.draw('DRAG OR SWIPE THE BLUE SQUARE',
+    canvasSize.x / 2, canvasSize.y * 0.2);
 }
 
 function drawRect

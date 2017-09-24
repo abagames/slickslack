@@ -10,6 +10,7 @@ let currentTargetPos: Vector;
 let prevCursorPos: Vector;
 let targetPos: Vector;
 let onDownFirst: Function;
+let isDownFirst = true;
 
 export function init(
   _canvas: HTMLCanvasElement, _pixelSize: Vector,
@@ -44,11 +45,11 @@ export function init(
 }
 
 function handleOnDown(x: number, y: number) {
-  if (onDownFirst != null) {
-    onDownFirst();
-    onDownFirst = null;
-  }
   onMouseTouchDown(x, y);
+  if (isDownFirst) {
+    isDownFirst = false;
+    onDownFirst();
+  }
 }
 
 export function setCurrentTargetPos(_currentTargetPos: Vector) {
