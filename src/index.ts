@@ -70,9 +70,19 @@ function intToFreq(v: number) {
   return Math.pow(2, (v / 12)) * 349.23;
 }
 
+const stageKey = 'slick_slack_stage';
+
 function startGame() {
   isTitle = false;
-  stage = 1;
+  const stageStr = localStorage.getItem(stageKey);
+  if (stageStr == null) {
+    stage = 1;
+  } else {
+    stage = Math.floor(Number(stageStr));
+  }
+  if (stage <= 0) {
+    stage = 1;
+  }
   createStage();
 }
 
@@ -241,13 +251,17 @@ function updateAfterCompleted() {
     text.draw("CONGRATULATIONS!", canvasSize.x / 2, canvasSize.y * 0.3);
     text.draw("30 STAGES ARE SOLVED", canvasSize.x / 2, canvasSize.y * 0.7);
     if (stageCompletedTicks > 180) {
-      stage++;
-      createStage();
+      goToNextStage();
     }
   } else if (stageCompletedTicks > 30) {
-    stage++;
-    createStage();
+    goToNextStage();
   }
+}
+
+function goToNextStage() {
+  stage++;
+  localStorage.setItem(stageKey, String(stage));
+  createStage();
 }
 
 const gridColors = ['white', 'red', 'blue', 'yellow', 'green'];
