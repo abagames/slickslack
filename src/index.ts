@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import * as Tone from 'tone';
 import Vector from './vector';
 import Random from './random';
 import * as generator from './generator';
@@ -18,17 +19,66 @@ let stage: number;
 let stageCompletedTicks = 0;
 let completingWay: number;
 let stageOffset = new Vector();
-const random = new Random();
 
 function init() {
   canvas = <HTMLCanvasElement>document.getElementById('main');
   canvasSize = new Vector(canvas.width, canvas.height);
   context = canvas.getContext('2d');
-  ui.init(canvas, canvasSize);
+  initTone();
+  ui.init(canvas, canvasSize, handleOntouchstartFirst);
   text.init(context);
   stage = 1;
   createStage();
+  setWayEnvelopes();
   update();
+}
+
+const envelopes = [];
+
+function initTone() {
+  const volume = new Tone.Volume(4);
+  volume.toMaster();
+  const delay = new Tone.PingPongDelay(0.25);
+  delay.connect(volume);
+  const masterLFO = new Tone.LFO(5.5, -2, 2);
+  masterLFO.start();
+  const scales = [4, 7, 9, 11, 12, 14, 16, 19];
+  _.forEach(scales, sc => {
+    const osc = new Tone.Oscillator(intToFreq(sc));
+    const osc2 = new Tone.Oscillator(intToFreq(sc + 12));
+    const env = new Tone.Envelope(0.05, 0.01, 0.5, 2);
+    const env2 = new Tone.Envelope(0.05, 0.01, 0.5, 2);
+    masterLFO.connect(osc.detune);
+    masterLFO.connect(osc2.detune);
+    env.connect(osc.output.output.gain);
+    env2.connect(osc2.output.output.gain);
+    osc.connect(delay);
+    osc2.connect(delay);
+    osc.start();
+    osc2.start();
+    envelopes.push([env, env2]);
+  });
+}
+
+function intToFreq(v: number) {
+  return Math.pow(2, (v / 12)) * 349.23;
+}
+
+function handleOntouchstartFirst() {
+  const ev = envelopes[0][0];
+  ev.triggerAttackRelease(ev.attack, "+0", 0.2);
+}
+
+let wayEnvelopes: any[];
+
+function setWayEnvelopes() {
+  const is = _.times(envelopes.length, i => i);
+  wayEnvelopes = [];
+  _.times(4, () => {
+    const i = generator.random.select(is);
+    wayEnvelopes.push(envelopes[i]);
+    is.splice(is.indexOf(i), 1);
+  });
 }
 
 function createStage() {
@@ -101,6 +151,9 @@ function updateUi() {
           w = 2;
         }
         slipCrate(pressingCrate, w);
+        const ev = wayEnvelopes[w];
+        ev[0].triggerAttackRelease(ev[0].attack, "+0", 0.2);
+        ev[1].triggerAttackRelease(ev[1].attack, "+0", 0.2);
         pressingPos.set(ui.cursorPos);
         if (checkStageCompleted()) {
           stageCompletedTicks = 1;

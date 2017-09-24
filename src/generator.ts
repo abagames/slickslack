@@ -6,7 +6,7 @@ export let gridSize: number;
 export let grid: number[][];
 export let targetGrid: number[][];
 export const wayVectors = [[1, 0], [0, 1], [-1, 0], [0, -1]];
-const random = new Random();
+export const random = new Random();
 
 export function createStage(stage) {
   random.setSeed((stage + 1) * 7);

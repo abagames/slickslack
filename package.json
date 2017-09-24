@@ -12,7 +12,8 @@
     "webpack-dev-server": "^2.8.2"
   },
   "dependencies": {
-    "lodash": "^4.17.4"
+    "lodash": "^4.17.4",
+    "tone": "^0.11.11"
   },
   "scripts": {
     "wds": "webpack-dev-server --inline",
