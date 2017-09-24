@@ -19,6 +19,8 @@ let stage: number;
 let stageCompletedTicks = 0;
 let completingWay: number;
 let stageOffset = new Vector();
+let isTitle = true;
+let isTitlePressed = false;
 
 function init() {
   canvas = <HTMLCanvasElement>document.getElementById('main');
@@ -26,9 +28,6 @@ function init() {
   context = canvas.getContext('2d');
   ui.init(canvas, canvasSize, handleOnDownFirst);
   text.init(context);
-  stage = 1;
-  createStage();
-  setWayEnvelopes();
   update();
 }
 
@@ -71,6 +70,23 @@ function intToFreq(v: number) {
   return Math.pow(2, (v / 12)) * 349.23;
 }
 
+function startGame() {
+  isTitle = false;
+  stage = 1;
+  createStage();
+}
+
+function createStage() {
+  generator.createStage(stage);
+  gridSize = generator.gridSize;
+  gridPixelSize = canvasSize.x / gridSize;
+  grid = generator.grid;
+  targetGrid = generator.targetGrid;
+  stageCompletedTicks = 0;
+  stageOffset.set(0, 0);
+  setWayEnvelopes();
+}
+
 let wayEnvelopes: number[];
 
 function setWayEnvelopes() {
@@ -83,16 +99,6 @@ function setWayEnvelopes() {
   });
 }
 
-function createStage() {
-  generator.createStage(stage);
-  gridSize = generator.gridSize;
-  gridPixelSize = canvasSize.x / gridSize;
-  grid = generator.grid;
-  targetGrid = generator.targetGrid;
-  stageCompletedTicks = 0;
-  stageOffset.set(0, 0);
-}
-
 let pressingCrate: Vector;
 let pressingPos = new Vector();
 const buttonSize = new Vector(40, 15);
@@ -100,6 +106,10 @@ let isButtonPressing = false;
 
 function update() {
   requestAnimationFrame(update);
+  if (isTitle) {
+    updateTitle();
+    return;
+  }
   if (stageCompletedTicks <= 0) {
     updateUi();
     drawGrid();
@@ -111,6 +121,23 @@ function update() {
       stage++;
       createStage();
     }
+  }
+}
+
+function updateTitle() {
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  if (ui.isPressed) {
+    ui.resetPressed();
+    isTitlePressed = true;
+  }
+  if (isTitlePressed) {
+    if (!ui.isPressing && isToneReady) {
+      isTitle = false;
+      startGame();
+    }
+  } else {
+    text.draw('SLICK SLACK', canvasSize.x / 2, canvasSize.y * 0.4);
+    text.draw('CLICK OR TAP', canvasSize.x / 2, canvasSize.y * 0.6);
   }
 }
 
