@@ -93,15 +93,35 @@ function goToNextStage() {
   createStage();
 }
 
+let showGenerating = false;
+let isShowingGenerating = false;
+let stageCreator;
+let showGeneratingTicks = 0;
+let showGeneratingDuration = 30;
+
 function createStage() {
-  generator.createStage(stage);
+  if (showGenerating) {
+    stageCreator = generator.createStage(stage, true);
+    isShowingGenerating = true;
+    showGeneratingDuration = 30;
+  } else {
+    generator.createStage(stage).next();
+    endCreateStage();
+  }
+}
+
+function endCreateStage() {
+  setGridSize();
+  setWayEnvelopes();
+}
+
+function setGridSize() {
   gridSize = generator.gridSize;
   gridPixelSize = canvasSize.x / gridSize;
   grid = generator.grid;
   targetGrid = generator.targetGrid;
   stageCompletedTicks = 0;
   stageOffset.set(0, 0);
-  setWayEnvelopes();
 }
 
 let wayEnvelopes: number[];
@@ -125,6 +145,21 @@ function update() {
   requestAnimationFrame(update);
   if (isTitle) {
     updateTitle();
+    return;
+  }
+  if (isShowingGenerating) {
+    if (showGeneratingTicks <= 0) {
+      const value = stageCreator.next().value;
+      setGridSize();
+      if (value.isCreated) {
+        endCreateStage();
+        isShowingGenerating = false;
+      }
+      showGeneratingTicks = showGeneratingDuration;
+      showGeneratingDuration *= 0.9;
+    }
+    showGeneratingTicks--;
+    drawGrid();
     return;
   }
   if (stageCompletedTicks <= 0) {
@@ -265,7 +300,7 @@ function updateAfterCompleted() {
   }
 }
 
-const gridColors = ['white', 'red', 'blue', 'yellow', 'green'];
+const gridColors = ['white', 'red', 'blue', 'yellow', 'green', '#faa'];
 
 function drawGrid(ox: number = 0, oy: number = 0) {
   context.clearRect(0, 0, canvas.width, canvas.height);
@@ -282,6 +317,9 @@ function drawGrid(ox: number = 0, oy: number = 0) {
     let g = grid[x][y];
     if (targetGrid[x][y] === 3 && g === 2) {
       g = 4;
+    }
+    if (isShowingGenerating && g < 0) {
+      g = 5;
     }
     if (g > 0) {
       context.fillStyle = gridColors[g];
@@ -394,6 +432,9 @@ function loadFromUrl() {
     const pair = param.split('=');
     if (pair[0] === 's') {
       stageStr = pair[1];
+    }
+    if (pair[0] === 'sg') {
+      showGenerating = true;
     }
   }
   if (stageStr == null) {

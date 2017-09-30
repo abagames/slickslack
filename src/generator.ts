@@ -8,22 +8,44 @@ export let targetGrid: number[][];
 export const wayVectors = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 export const random = new Random();
 
-export function createStage(stage) {
+export function* createStage(stage, isShowingGenerating = false) {
   random.setSeed((stage + 1) * 7);
-  let isCreated = false;
+  let isValid = false;
   for (let i = 0; i < 10; i++) {
-    isCreated = tryToCreateStage(stage);
-    if (isCreated) {
-      break;
+    if (isShowingGenerating) {
+      const creator = tryToCreateStage(stage, true);
+      for (; ;) {
+        const value = creator.next().value;
+        if (value.isCreated) {
+          isValid = value.isValid;
+          break;
+        } else {
+          yield {
+            isCreated: false
+          };
+        }
+      }
+      if (isValid) {
+        break;
+      }
+    } else {
+      const value = tryToCreateStage(stage).next().value;
+      if (value.isValid) {
+        isValid = true;
+        break;
+      }
     }
   }
-  if (!isCreated) {
+  if (!isValid) {
     random.setSeed(0);
-    tryToCreateStage(30);
+    tryToCreateStage(30).next();
+  }
+  yield {
+    isCreated: true
   }
 }
 
-function tryToCreateStage(stage) {
+function* tryToCreateStage(stage, isShowingGenerating = false) {
   const difficulty = Math.sqrt(1 + stage * 0.5) - 1 + 0.01;
   let gs = Math.floor(7 + random.get(difficulty) + difficulty);
   if (gs > 32) {
@@ -43,18 +65,34 @@ function tryToCreateStage(stage) {
   }
   const cc = Math.floor(gs * gs * ccr) + 1;
   setCrates(size, cc);
-  _.times(cc * 3, () => {
+  const notCompletedResult = {
+    isCreated: false,
+    isValid: false
+  };
+  if (isShowingGenerating) {
+    yield notCompletedResult;
+  }
+  for (let i = 0; i < cc * 3; i++) {
     reverseSlipCrate();
-  });
+    if (isShowingGenerating) {
+      yield notCompletedResult;
+    }
+  };
   removeEmptyRowsAndColumns(size);
   _.times(Math.floor(size.x * size.y * random.get(0, 0.5)), () => {
     addWall(size);
   });
+  if (isShowingGenerating) {
+    yield notCompletedResult;
+  }
   slideStage(size);
   _.times(5, () => {
     slipCratesOnTarget();
   });
-  return checkIsValidStage();
+  yield {
+    isCreated: true,
+    isValid: checkIsValidStage()
+  };
 }
 
 function initGrid(size: number) {

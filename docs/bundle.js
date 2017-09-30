@@ -17302,15 +17302,33 @@ function goToNextStage() {
     saveAsUrl();
     createStage();
 }
+var showGenerating = false;
+var isShowingGenerating = false;
+var stageCreator;
+var showGeneratingTicks = 0;
+var showGeneratingDuration = 30;
 function createStage() {
-    generator.createStage(stage);
+    if (showGenerating) {
+        stageCreator = generator.createStage(stage, true);
+        isShowingGenerating = true;
+        showGeneratingDuration = 30;
+    }
+    else {
+        generator.createStage(stage).next();
+        endCreateStage();
+    }
+}
+function endCreateStage() {
+    setGridSize();
+    setWayEnvelopes();
+}
+function setGridSize() {
     gridSize = generator.gridSize;
     gridPixelSize = canvasSize.x / gridSize;
     grid = generator.grid;
     targetGrid = generator.targetGrid;
     stageCompletedTicks = 0;
     stageOffset.set(0, 0);
-    setWayEnvelopes();
 }
 var wayEnvelopes;
 function setWayEnvelopes() {
@@ -17330,6 +17348,21 @@ function update() {
     requestAnimationFrame(update);
     if (isTitle) {
         updateTitle();
+        return;
+    }
+    if (isShowingGenerating) {
+        if (showGeneratingTicks <= 0) {
+            var value = stageCreator.next().value;
+            setGridSize();
+            if (value.isCreated) {
+                endCreateStage();
+                isShowingGenerating = false;
+            }
+            showGeneratingTicks = showGeneratingDuration;
+            showGeneratingDuration *= 0.9;
+        }
+        showGeneratingTicks--;
+        drawGrid();
         return;
     }
     if (stageCompletedTicks <= 0) {
@@ -17469,7 +17502,7 @@ function updateAfterCompleted() {
         goToNextStage();
     }
 }
-var gridColors = ['white', 'red', 'blue', 'yellow', 'green'];
+var gridColors = ['white', 'red', 'blue', 'yellow', 'green', '#faa'];
 function drawGrid(ox, oy) {
     if (ox === void 0) { ox = 0; }
     if (oy === void 0) { oy = 0; }
@@ -17485,6 +17518,9 @@ function drawGrid(ox, oy) {
         var g = grid[x][y];
         if (targetGrid[x][y] === 3 && g === 2) {
             g = 4;
+        }
+        if (isShowingGenerating && g < 0) {
+            g = 5;
         }
         if (g > 0) {
             context.fillStyle = gridColors[g];
@@ -17581,6 +17617,9 @@ function loadFromUrl() {
         var pair = param.split('=');
         if (pair[0] === 's') {
             stageStr = pair[1];
+        }
+        if (pair[0] === 'sg') {
+            showGenerating = true;
         }
     }
     if (stageStr == null) {
@@ -41379,57 +41418,167 @@ var __WEBPACK_AMD_DEFINE_RESULT__;(function(root, factory){
 
 "use strict";
 
+var __generator = (this && this.__generator) || function (thisArg, body) {
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    function verb(n) { return function (v) { return step([n, v]); }; }
+    function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (_) try {
+            if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+            if (y = 0, t) op = [0, t.value];
+            switch (op[0]) {
+                case 0: case 1: t = op; break;
+                case 4: _.label++; return { value: op[1], done: false };
+                case 5: _.label++; y = op[1]; op = [0]; continue;
+                case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                default:
+                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                    if (t[2]) _.ops.pop();
+                    _.trys.pop(); continue;
+            }
+            op = body.call(thisArg, _);
+        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+    }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var _ = __webpack_require__(1);
 var vector_1 = __webpack_require__(0);
 var random_1 = __webpack_require__(7);
 exports.wayVectors = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 exports.random = new random_1.default();
-function createStage(stage) {
-    exports.random.setSeed((stage + 1) * 7);
-    var isCreated = false;
-    for (var i = 0; i < 10; i++) {
-        isCreated = tryToCreateStage(stage);
-        if (isCreated) {
-            break;
+function createStage(stage, isShowingGenerating) {
+    if (isShowingGenerating === void 0) { isShowingGenerating = false; }
+    var isValid, i, creator, value, value;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                exports.random.setSeed((stage + 1) * 7);
+                isValid = false;
+                i = 0;
+                _a.label = 1;
+            case 1:
+                if (!(i < 10)) return [3 /*break*/, 9];
+                if (!isShowingGenerating) return [3 /*break*/, 7];
+                creator = tryToCreateStage(stage, true);
+                _a.label = 2;
+            case 2:
+                value = creator.next().value;
+                if (!value.isCreated) return [3 /*break*/, 3];
+                isValid = value.isValid;
+                return [3 /*break*/, 6];
+            case 3: return [4 /*yield*/, {
+                    isCreated: false
+                }];
+            case 4:
+                _a.sent();
+                _a.label = 5;
+            case 5: return [3 /*break*/, 2];
+            case 6:
+                if (isValid) {
+                    return [3 /*break*/, 9];
+                }
+                return [3 /*break*/, 8];
+            case 7:
+                value = tryToCreateStage(stage).next().value;
+                if (value.isValid) {
+                    isValid = true;
+                    return [3 /*break*/, 9];
+                }
+                _a.label = 8;
+            case 8:
+                i++;
+                return [3 /*break*/, 1];
+            case 9:
+                if (!isValid) {
+                    exports.random.setSeed(0);
+                    tryToCreateStage(30).next();
+                }
+                return [4 /*yield*/, {
+                        isCreated: true
+                    }];
+            case 10:
+                _a.sent();
+                return [2 /*return*/];
         }
-    }
-    if (!isCreated) {
-        exports.random.setSeed(0);
-        tryToCreateStage(30);
-    }
+    });
 }
 exports.createStage = createStage;
-function tryToCreateStage(stage) {
-    var difficulty = Math.sqrt(1 + stage * 0.5) - 1 + 0.01;
-    var gs = Math.floor(7 + exports.random.get(difficulty) + difficulty);
-    if (gs > 32) {
-        gs = 32;
-    }
-    initGrid(gs);
-    var size = new vector_1.default(exports.gridSize, exports.random.getInt(exports.gridSize * 0.5, exports.gridSize + 1));
-    if (exports.random.get() < 0.5) {
-        size.swapXy();
-    }
-    setAroundWalls(size);
-    var ccr = exports.random.get(difficulty) * 0.1;
-    if (ccr > 0.33) {
-        ccr = 0.33;
-    }
-    var cc = Math.floor(gs * gs * ccr) + 1;
-    setCrates(size, cc);
-    _.times(cc * 3, function () {
-        reverseSlipCrate();
+function tryToCreateStage(stage, isShowingGenerating) {
+    if (isShowingGenerating === void 0) { isShowingGenerating = false; }
+    var difficulty, gs, size, ccr, cc, notCompletedResult, i;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                difficulty = Math.sqrt(1 + stage * 0.5) - 1 + 0.01;
+                gs = Math.floor(7 + exports.random.get(difficulty) + difficulty);
+                if (gs > 32) {
+                    gs = 32;
+                }
+                initGrid(gs);
+                size = new vector_1.default(exports.gridSize, exports.random.getInt(exports.gridSize * 0.5, exports.gridSize + 1));
+                if (exports.random.get() < 0.5) {
+                    size.swapXy();
+                }
+                setAroundWalls(size);
+                ccr = exports.random.get(difficulty) * 0.1;
+                if (ccr > 0.33) {
+                    ccr = 0.33;
+                }
+                cc = Math.floor(gs * gs * ccr) + 1;
+                setCrates(size, cc);
+                notCompletedResult = {
+                    isCreated: false,
+                    isValid: false
+                };
+                if (!isShowingGenerating) return [3 /*break*/, 2];
+                return [4 /*yield*/, notCompletedResult];
+            case 1:
+                _a.sent();
+                _a.label = 2;
+            case 2:
+                i = 0;
+                _a.label = 3;
+            case 3:
+                if (!(i < cc * 3)) return [3 /*break*/, 6];
+                reverseSlipCrate();
+                if (!isShowingGenerating) return [3 /*break*/, 5];
+                return [4 /*yield*/, notCompletedResult];
+            case 4:
+                _a.sent();
+                _a.label = 5;
+            case 5:
+                i++;
+                return [3 /*break*/, 3];
+            case 6:
+                ;
+                removeEmptyRowsAndColumns(size);
+                _.times(Math.floor(size.x * size.y * exports.random.get(0, 0.5)), function () {
+                    addWall(size);
+                });
+                if (!isShowingGenerating) return [3 /*break*/, 8];
+                return [4 /*yield*/, notCompletedResult];
+            case 7:
+                _a.sent();
+                _a.label = 8;
+            case 8:
+                slideStage(size);
+                _.times(5, function () {
+                    slipCratesOnTarget();
+                });
+                return [4 /*yield*/, {
+                        isCreated: true,
+                        isValid: checkIsValidStage()
+                    }];
+            case 9:
+                _a.sent();
+                return [2 /*return*/];
+        }
     });
-    removeEmptyRowsAndColumns(size);
-    _.times(Math.floor(size.x * size.y * exports.random.get(0, 0.5)), function () {
-        addWall(size);
-    });
-    slideStage(size);
-    _.times(5, function () {
-        slipCratesOnTarget();
-    });
-    return checkIsValidStage();
 }
 function initGrid(size) {
     exports.gridSize = size;
